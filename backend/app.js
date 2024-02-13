@@ -28,18 +28,7 @@ app
   const books = await Book.find({});
   res.json(books);
 })
-.post('/api/books', async(req, res) => {
-  const book = new Book(req.body);
 
-  try {
-    await book.save();
-    res.json({ message: 'Livre sauvegardé' });
-  } catch(error) {
-    console.error(error);
-    res.statusCode(500);
-    res.statusMessage(error);
-  }
-})
 // Book
 .get('/api/books/:id', async(req, res) => {
   const book = await Book.findById(req.params.id);
@@ -54,17 +43,8 @@ app
 .put('/api/books/:id', async(req, res) => {
   
 })
-.delete('/api/books/:id', async(req, res) => {
-  try {
-    await Book.deleteOne({ _id: req.params.id });
-    res.json({ message: 'Livre supprimé' });
-  } catch(error) {
-    console.error(error);
-    res.statusMessage(error);
-    res.sendStatus(500);
-  }
-})
-// Authent
+
+// Auth
 .post('/api/auth/login', async(req, res) => {
   // hachage du mot de passe
   const password = req.body.password;
