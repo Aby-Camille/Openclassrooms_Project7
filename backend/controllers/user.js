@@ -1,48 +1,49 @@
-const User = require('./models/user');
+const User = require('../models/user');
 const bcrypt = require('bcrypt');
-const jwt = ('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 require('dotenv').config;
 
+const keyToken = process.env.JWT_TOKEN_SECRET
+const keyExpiration = process.env.JWT_EXPIRES_IN;
+
 //Signup
-exports.userSignup = (req, res) => {
-    const password = req.body.password;
-    bcrypt.hash(password, 10)
-    .then (hash => {
-    const user = new User({ 
-        email: req.body.email, 
-        password: hash 
-    });
-    user.save()
-      .then (() => res.status(201).json({ message: 'Nouvel utilisateur enregistré'}))
-      .catch(error => res.status(400).json({ error }))
-    })
-    .catch(error => res.status(500).json({ error }));
+exports.userSignup = async(req, res) => {
+    try {
+        const password = await bcrypt.hash(req.body.password, 10);
+
+        const user = new User({
+            email: req.body.email, 
+            password
+        });
+        await user.save();
+        res.status(201).json({ message: 'Nouvel utilisateur enregistré' });
+    } catch(error) {
+        res.status(500).json({ error });
+    }
 };
 
 //Login
 exports.userLogin = async(req, res, next) => {
-    
-    const password = req.body.password;
-    User.findOne({ email: req.body.email, password })
-    .then (user => {
+    try {
+        const user = await User.findOne({ email: req.body.email });
         if (!user) {
-            return res.status(401).json({ error: 'Utilisateur ou mot de passe incorrete' });
+            res.status(401).json({ error: 'Utilisateur ou mot de passe incorrecte' });
         }
-            bcrypt.compare(req.body.password, user.password)
-            .then(valid => {
-                if (!valid) {
-                    return res.status(401).json({ error: 'Mot de passe incorrecte' });
-                }
-                    res.status(200).json({
-                        userId: user._id,
-                        token: jwt.sign(
-                            { userId: user._id },
-                            'TOKEN_SECRET',
-                            { expiresIn: '24h' }
-                        )
-                    });
-                })
-                .catch(error => res.status(500).json({ error }));
-        })
-        .catch(error => res.status(500).json({ error }));
+
+        const valid = await bcrypt.compare(req.body.password, user.password);
+        if (!valid) {
+            res.status(401).json({ error: 'Utilisateur ou mot de passe incorrecte' });
+        }
+
+        res.status(200).json({
+            userId: user._id,
+            token: jwt.sign(
+                { userId: user._id },
+                keyToken,
+                { expiresIn: keyExpiration }
+            )
+        });
+    } catch (error) {
+        res.status(500).json({ error });
+    }
  };
