@@ -11,14 +11,14 @@ router.post('/:id/rating', auth, bookCtrl.createRatingBook);
 // Best rating
 router.get('/bestrating', bookCtrl.bestRating);
 
+//Read
+router.get('/:id', bookCtrl.getOneBook);
+router.get('/', bookCtrl.getAllBook);  
+
 //Update
 router.put('/:id', auth, multer, bookCtrl.updateOneBook);
 
 //Delete
 router.delete('/:id', auth, bookCtrl.deleteOneBook);
-
-//Read
-router.get('/:id', bookCtrl.getOneBook);
-router.get('/', bookCtrl.getAllBook);   
 
 module.exports = router;
