@@ -6,7 +6,6 @@ const multer = require('../middleware/multer');
 const sharp = require('../middleware/sharp');
 
 //Create & Save
-//@TODO possible d'enregistrer qu'un fichier, et faire sharp avant multer peut etre
 router.post('/', auth, multer, sharp, bookCtrl.createBook);
 router.post('/:id/rating', auth, bookCtrl.createRatingBook);
 

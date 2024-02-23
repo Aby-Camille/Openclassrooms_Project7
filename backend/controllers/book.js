@@ -1,6 +1,17 @@
 const Book = require('../models/book');
 const fs = require('fs');
 
+function deleteImgFile (bookToDelete) {
+    if (bookToDelete.imageUrl) {
+        const filenameThumb = bookToDelete.imageUrl.split('/images/')[1];
+        const filenameLarge = filenameThumb.split('_thumbnail')[0];
+
+        fs.unlink(`images/${filenameLarge}.jpg`, () => { });
+        fs.unlink(`images/${filenameLarge}.jpeg`, () => { });
+        fs.unlink(`images/${filenameLarge}.png`, () => { });
+        fs.unlink(`images/${filenameThumb}`, () => { });
+    }
+};
 
 //Create and Save new book
 exports.createBook = async(req, res) => {
@@ -15,7 +26,7 @@ exports.createBook = async(req, res) => {
 
         res.status(201).json({ message: 'Livre sauvegardé' });
     } catch (error) { 
-        res.status(400).json({ error });
+        res.status(500).json({ error });
     };
 };
 
@@ -36,9 +47,9 @@ exports.createRatingBook = async (req, res) => {
 
             let newRating = 0;
             book.ratings.forEach(rating => {
-                newRating = newRating + rating;
+                newRating = newRating + rating.grade;
             });
-            book.averageRating = newRating/book.rating.length;
+            book.averageRating = newRating/book.ratings.length;
             // book.averageRating = book.ratings.reduce((accumulator, currentValue) => accumulator + currentValue.grade, 0) / book.ratings.length;
         
             await book.save();
@@ -59,7 +70,7 @@ exports.getAllBook = async(_req, res) => {
 
 exports.getOneBook = async(req, res) => {
     try {
-        const book = await Book.findOne({ _id: req.params.id }, book);
+        const book = await Book.findOne({ _id: req.params.id });
         res.json(book);
     } catch (error) {
         res.status(404).json({ error });
@@ -75,19 +86,10 @@ exports.updateOneBook = async(req, res) => {
 
     const bookBefore = await Book.findOneAndUpdate({ _id: req.params.id, userId: req.auth.userId }, book);
     if (!bookBefore) {
-        res.status(403).json({ message : 'Not authorized'});
+        res.status(403).json({ message : 'Non autorisé'});
     }
 
-    if (bookBefore.imageUrl) {
-        
-        const filenameThumb = bookBefore.imageUrl.split('/images/')[1];
-        const filenameLarge = filenameThumb.split('_thumbnail')[0];
-
-        fs.unlink(`images/${filenameLarge}.jpg`, () => { });
-        fs.unlink(`images/${filenameLarge}.jpeg`, () => { });
-        fs.unlink(`images/${filenameLarge}.png`, () => { });
-        fs.unlink(`images/${filenameThumb}`, () => { });
-    }
+    deleteImgFile(bookBefore);
 
     res.json({ message: 'Livre mis a jour' });
 };
@@ -99,14 +101,8 @@ exports.deleteOneBook = async(req, res) => {
         if (!book) {
             res.status(403).json({ message: 'Non autorisé' });
         }
-
-        const filenameThumb = book.imageUrl.split('/images/')[1];
-        const filenameLarge = filenameThumb.split('_thumbnail')[0];
-
-        fs.unlink(`images/${filenameLarge}.jpg`, () => { });
-        fs.unlink(`images/${filenameLarge}.jpeg`, () => { });
-        fs.unlink(`images/${filenameLarge}.png`, () => { });
-        fs.unlink(`images/${filenameThumb}`, () => { });
+        
+        deleteImgFile(book);
 
         await book.deleteOne({ _id: req.params.id });
         res.json({ message: 'Livre supprimé' });
